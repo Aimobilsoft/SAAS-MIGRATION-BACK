@@ -1,0 +1,24 @@
+.c-facturacion {
+    &__border-container {
+        width: 95%;
+        margin-left: auto;
+        margin-right: auto;
+        border: 1px solid #e2e0e0;
+        border-radius: 5px;
+        padding: 2%;
+    }
+    &__color-red {
+        text-align: right;
+        color: red;
+    }
+    &__color-blue {
+        color: #294eb6;
+    }
+    & .e-checkbox_1 .e-label {
+        color: #294eb6;
+    }
+}
+
+.c-facturacion__border-container .e-checkbox-wrapper .e-label{
+    color: #294eb6 !important;
+}

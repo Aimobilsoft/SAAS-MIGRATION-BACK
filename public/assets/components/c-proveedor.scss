@@ -1,0 +1,58 @@
+.c-proveedor {
+    &__container {
+        width: 95%;
+        margin-top: 1%;
+    }
+    &__grid {
+        padding: 0px;
+    }
+    &__p-l-0 {
+        padding-left: 0 !important;
+    }
+    &__p-r-0 {
+        padding-right: 0 !important;
+    }
+    &__labelMargin {
+        margin-bottom: 0;
+        margin-top: .3rem;
+    }
+    &__labelCenter {
+        width: 100%;
+        text-align: center;
+    }
+    &__input {
+        padding-left: 2px !important;
+        padding-right: 2px !important;
+        font-size: 12px;
+        width: 100%;
+        border: 1px solid#d4d4d4;
+        border-radius: 2px;
+    }
+    &__fluid {
+        padding-left: 2% !important;
+    }
+    &__border {
+        border: 1px solid #e2e0e0;
+        border-radius: 5px;
+        padding: 2%;
+    }
+    &__label {
+        padding-left: 63%;
+    }
+    &__cuenta {
+        border: 1px solid #e2e0e0;
+        border-radius: 1px;
+        // padding-bottom: 5px;
+    }
+    &__row-2 {
+        margin-top: 5px;
+    }
+    &__labelWarning {
+        color: red;
+        font-style: italic;
+    }
+    &__accountant {
+        margin: 0px !important;
+        padding: 0px !important;
+    }
+}

@@ -1,0 +1,34 @@
+{
+    "desarrollo_home": {
+        "user": "desarrollo",
+        "password": "d3v3l0p3r",
+        "database": "db_formio",
+        "server": "192.168.1.200",
+        "port": 1433,
+        "driver": "tedious",
+        "requestTimeout": 300000,
+        "options": {},
+        "stream": true,
+        "pool": {
+            "max": 100,
+            "min": 0,
+            "idleTimeoutMillis": 300000
+        }
+    },
+    "desarrollo": {
+        "user": "desarrollo",
+        "password": "d3v3l0p3r",
+        "database": "db_formio",
+        "server": "mobilsoft.ddns.me",
+        "port": 1433,
+        "driver": "tedious",
+        "requestTimeout": 300000,
+        "options": {},
+        "stream": true,
+        "pool": {
+            "max": 100,
+            "min": 0,
+            "idleTimeoutMillis": 300000
+        }
+    }
+}

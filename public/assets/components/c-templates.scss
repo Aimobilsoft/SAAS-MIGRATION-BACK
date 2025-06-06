@@ -1,0 +1,18 @@
+@keyframes latidos {
+    from { transform: none; }
+    10% { transform: scale(1.4); }
+    to { transform: none; }
+}
+.c-templates {
+    &__container{
+        padding-bottom: 2%;
+    }
+    &__fav {
+        float: right;
+        &:hover {
+            color: #e7de59;
+            animation: latidos 0.5s;
+            -webkit-text-stroke: 1.5px gray;
+        }
+    }
+}

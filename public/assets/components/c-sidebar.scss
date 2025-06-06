@@ -1,0 +1,37 @@
+.c-sidebar {
+    &__header {
+        &--img{
+            width: 35%;
+        }
+        &--close {
+            margin-left: 54%;
+            margin-top: -26%;
+        }
+    }
+    &__container {
+        color: white;
+        & svg {
+            font-size: $font-size-sidebarIcon;
+        }
+        & label {
+            font-size: $font-size-sidebarLabel;
+        }
+    }
+
+    &__selected {
+        background-color: white;
+    }
+
+    &__label-padding {
+        padding-left: 17px;
+    }
+    &__label {
+        color: black;
+    }
+}
+
+.sidebar-menu {
+    & li {
+        border-top: 1px #423f3f solid;
+    }
+}

@@ -1,0 +1,20 @@
+.o-text{
+    // Aliniaciones
+    &__center{
+        text-align: center;
+    }
+    &__left{
+        text-align: left;
+    }
+    &__right{
+        text-align: right;
+    }
+    &__justify{
+        text-align: justify;
+    }
+    // Tamaños dashBoard
+
+    &__sizeBoard{
+        font-size: $font-size-dashboardNumber !important;
+    }
+}
