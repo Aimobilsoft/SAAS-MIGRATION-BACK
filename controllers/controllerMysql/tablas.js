@@ -1,49 +1,44 @@
-const db = require("../../config/connections/database");
 const managerDBConnections = require("../../config/connections/managerDBConnections");
 
 module.exports = {
   async listar(req, res) {
     const conn = managerDBConnections.getConnection();
-
     const params = [null, req.body.tabla ?? null, req.body.json ?? null, "L"];
 
     try {
       const data = await conn.raw(`CALL sp_tablas(?,?,?,?)`, params);
-      const results = data[0];
+      const [cabeceras, contenido] = data[0];
 
-      // Crear lista de nombres
-      const names = results[0].map((elem, i) => ({
-        name: ["", elem.name],
+      const names = cabeceras.map((col, i) => ({
+        name: ["", col.name],
         orden: i,
       }));
 
-      let respuesta = JSON.parse(JSON.stringify(results[1]));
+      let respuesta = JSON.parse(JSON.stringify(contenido));
 
-      // Si la tabla es view_entrada_almacen, procesar el detalle
+      // Filtrar si es una vista específica
       if (params[1] === "view_entrada_almacen") {
-        respuesta = respuesta.filter((elemento) => {
-          for (const [key, value] of Object.entries(elemento)) {
-            if (key === "detalle:hide") {
-              const productos = JSON.parse(value);
-              const productosConDiferencia = productos.filter((producto) => {
-                const recibidas = producto["Recibidas:$:colspan:[Cantidades]"];
-                const facturadas = producto["Facturada:$:colspan:[Cantidades]"];
-                return recibidas - facturadas > 0;
-              });
-              return productosConDiferencia.length > 0;
-            }
+        respuesta = respuesta.filter((item) => {
+          const detalle = item["detalle:hide"];
+          if (detalle) {
+            const productos = JSON.parse(detalle);
+            return productos.some((prod) => {
+              const r = prod["Recibidas:$:colspan:[Cantidades]"];
+              const f = prod["Facturada:$:colspan:[Cantidades]"];
+              return r - f > 0;
+            });
           }
-          return true; // Si no tiene "detalle:hide", conservar
+          return true;
         });
       }
 
       res.status(200).json({
         mensaje: "Procedimiento ejecutado correctamente",
-        filas: { recordset: results[0], recordsets: [names, respuesta] },
+        filas: { recordset: cabeceras, recordsets: [names, respuesta] },
         status: true,
       });
     } catch (err) {
-      console.error("Error en listar:", err);
+      console.error("❌ Error en listar:", err);
       res.status(500).json({
         mensaje: "No se pudo ejecutar el procedimiento",
         error: err.message || "Error desconocido",
@@ -60,24 +55,23 @@ module.exports = {
 
     try {
       const data = await conn.raw(`CALL sp_tablas(?,?,?,?)`, params);
-      const results = data[0];
+      const [cabeceras, contenido] = data[0];
 
-      // Generar nombres de las columnas
-      const names = results[0].map((elem, i) => ({
-        name: ["", elem.name],
+      const names = cabeceras.map((col, i) => ({
+        name: ["", col.name],
         orden: i,
       }));
 
       res.status(200).json({
         mensaje: "Procedimiento ejecutado correctamente",
         filas: {
-          recordset: results[0],
-          recordsets: [names, results[1]],
+          recordset: cabeceras,
+          recordsets: [names, contenido],
         },
         status: true,
       });
     } catch (err) {
-      console.error("Error en listar_vistas:", err);
+      console.error("❌ Error en listar_vistas:", err);
       res.status(500).json({
         mensaje: "No se pudo ejecutar el procedimiento",
         error: err.message || "Error desconocido",
@@ -92,83 +86,67 @@ module.exports = {
     const conn = managerDBConnections.getConnection();
 
     try {
-      if (req.body.from === "tb") {
-        // Procedimiento basado en tabla
-        const params = [
-          req.body.id ?? null,
-          req.body.tabla ?? null,
-          req.body.json ?? null,
-          "Registro",
-        ];
+      const { from, tabla, id, json, sp } = req.body;
 
+      if (from === "tb") {
+        // Lógica para tabla directa
+        const params = [id ?? null, tabla ?? null, json ?? null, "Registro"];
         const data = await conn.raw(`CALL sp_tablas(?,?,?,?)`, params);
-        const results = data[0];
-
         return res.status(200).json({
           mensaje: "Procedimiento ejecutado correctamente",
-          filas: { recordset: results[0], recordsets: [results[0]] },
-          status: true,
-        });
-      } else {
-        // Procedimiento basado en SP
-        const spName = req.body.sp?.trim();
-        if (!spName) {
-          return res.status(400).json({
-            mensaje: "El nombre del procedimiento almacenado (sp) es requerido",
-            status: false,
-          });
-        }
-
-        // Obtener campos del SP
-        const dataCampos = await conn.raw(`CALL sp_listar_campos_proc(?, ?)`, [
-          spName,
-          "listar",
-        ]);
-        const campos = dataCampos[0][0]; // Primer recordset
-
-        if (!campos || campos.length === 0) {
-          return res.status(400).json({
-            mensaje: "No se encontraron campos para el procedimiento",
-            status: false,
-          });
-        }
-
-        let bodyData = { ...req.body };
-        if (Object.keys(bodyData).length === 3) {
-          Object.keys(bodyData).forEach((key) => {
-            if (typeof bodyData[key] === "object") {
-              bodyData = { ...bodyData[key], sp: spName };
-            }
-          });
-        }
-
-        const values = campos
-          .map((e) => {
-            if (e.ORDINAL_POSITION !== campos.length) {
-              const val = bodyData[e.nombre_parametro];
-              return val === "" && val !== 0 ? null : val;
-            }
-          })
-          .filter((v) => v !== undefined);
-
-        values.push("LISTAR"); // Agregar modo LISTAR
-
-        const placeholders = campos.map(() => "?").join(", ");
-        const resultData = await conn.raw(
-          `CALL ${spName}(${placeholders})`,
-          values
-        );
-
-        return res.status(200).json({
-          mensaje: "Procedimiento ejecutado correctamente",
-          filas: { recordset: resultData[0][0] },
+          filas: { recordset: data[0][0], recordsets: [data[0][0]] },
           status: true,
         });
       }
-    } catch (error) {
-      console.error("Error en registro:", error);
 
-      return res.status(500).json({
+      // Lógica basada en SP
+      const spName = sp?.trim();
+      if (!spName) {
+        return res.status(400).json({
+          mensaje: "El nombre del procedimiento almacenado (sp) es requerido",
+          status: false,
+        });
+      }
+
+      // Obtener campos del SP
+      const dataCampos = await conn.raw(`CALL sp_listar_campos_proc(?, ?)`, [spName, "listar"]);
+      const campos = dataCampos[0][0];
+
+      if (!campos?.length) {
+        return res.status(400).json({
+          mensaje: "No se encontraron campos para el procedimiento",
+          status: false,
+        });
+      }
+
+      // Ajuste si viene un objeto anidado
+      let bodyData = { ...req.body };
+      if (Object.keys(bodyData).length === 3) {
+        const nestedKey = Object.keys(bodyData).find((k) => typeof bodyData[k] === "object");
+        if (nestedKey) bodyData = { ...bodyData[nestedKey], sp: spName };
+      }
+
+      // Armar valores dinámicos
+      const values = campos
+        .filter((f) => f.ORDINAL_POSITION !== campos.length)
+        .map((f) => {
+          const val = bodyData[f.nombre_parametro];
+          return val === "" && val !== 0 ? null : val;
+        });
+
+      values.push("LISTAR");
+      const placeholders = campos.map(() => "?").join(", ");
+
+      const resultData = await conn.raw(`CALL ${spName}(${placeholders})`, values);
+
+      return res.status(200).json({
+        mensaje: "Procedimiento ejecutado correctamente",
+        filas: { recordset: resultData[0][0] },
+        status: true,
+      });
+    } catch (error) {
+      console.error("❌ Error en registro:", error);
+      res.status(500).json({
         mensaje: "No se pudo ejecutar el procedimiento",
         error: error.message || "Error desconocido",
         status: false,

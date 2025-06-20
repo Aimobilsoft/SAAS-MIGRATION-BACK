@@ -28,52 +28,48 @@ async function connectAllDb() {
     console.log("error conexion DB", error);
     return;
   }
-
-  dataTenantMap = tenants
-    .map((tenant) => {
-      let key = tenant.subdomain.toLowerCase() + tenant.app.toLowerCase();
-      return {
-        [key]: knex({
-          client: process.env.DB_CLIENT,
-          connection: {
-            user: process.env.DB_USER,
-            password: process.env.DB_PASSWORD,
-            port: process.env.DB_PORT,
-            database: tenant.database,
-            host: process.env.DB_HOST,
-          },
-          pool: {
-            min: 2,
-            max: 20,
-          },
-          connectionTimeout: 30000, // 30 segundos
-          requestTimeout: 30000, // 30 segundos
-        }),
-      };
-    })
-    .reduce((prev, next) => {
-      return Object.assign({}, prev, next);
-    }, {});
+  dataTenantMap = {};
+  tenants.forEach((tenant) => {
+    let key = tenant.subdomain.toLowerCase() + tenant.app.toLowerCase();
+    dataTenantMap[key] = knex({
+      client: process.env.DB_CLIENT,
+      connection: {
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+        port: process.env.DB_PORT,
+        database: tenant.database,
+        host: process.env.DB_HOST,
+        connectTimeout: 60000,
+        keepAlive: true,
+      },
+      pool: {
+        min: 2,
+        max: 50,
+        idleTimeoutMillis: 10000, // 10 seconds
+        acquireTimeoutMillis: 60000,
+        createTimeoutMillis: 30000,
+        destroyTimeoutMillis: 5000,
+      },
+      connectionTimeout: 60000, // 60 segundos
+      requestTimeout: 60000, // 60 segundos
+    });
+  });
 }
 
 function getConnectionBySubdominio(subdominio, app) {
-  // DESCOMENTAR PARA ACTIVAR EL MULTITENACY
-  // +++++++++++++++++++++++++++++++++++++++++++++++++++
   try {
     let key = subdominio.toLowerCase() + app.toLowerCase();
-    if (dataTenantMap) {
+    if (dataTenantMap && dataTenantMap[key]) {
       return dataTenantMap[key];
+    } else {
+      throw new Error(
+        "No existe conexión para el subdominio y app especificados"
+      );
     }
-  } catch (error) {}
-  // +++++++++++++++++++++++++++++++++++++++++++++++++++
-
-  // return {
-  //     host: process.env.DB_HOST,
-  //     user: process.env.DB_USER,
-  //     database: process.env.DB_DATABASE,
-  //     //database: "alimentos_develop_2",
-  //     password: process.env.DB_PASSWORD
-  // }
+  } catch (error) {
+    console.error("Error en getConnectionBySubdominio:", error);
+    return null;
+  }
 }
 
 function getConnection() {
@@ -81,16 +77,22 @@ function getConnection() {
     const nameSpace = dataTenantSpace.getNamespace("unique context");
     const conn = nameSpace.get("connection");
     if (!conn) {
-      throw "Connection i not set for any tenant database";
+      throw new Error("Connection is not set for any tenant database");
     }
     return conn;
   } catch (error) {
-    console.log(error);
+    console.error("Error en getConnection:", error);
+    return null;
   }
 }
 
 function closeonexion(conex) {
-  conex.destroy();
+  try {
+    conex.destroy();
+    console.log("Conexión cerrada correctamente");
+  } catch (error) {
+    console.error("Error al cerrar la conexión:", error);
+  }
 }
 
 module.exports = {

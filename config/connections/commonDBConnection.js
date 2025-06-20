@@ -12,13 +12,19 @@ const configInit = {
     port: process.env.DB_PORT,
     database: process.env.DB_DATABASE_SAAS,
     password: process.env.DB_PASSWORD,
+    connectTimeout: 60000, // 60 seconds
+    keepAlive: true,
   },
   pool: {
     min: 2,
-    max: 20,
+    max: 50,
+    idleTimeoutMillis: 10000, // 10 seconds
+    acquireTimeoutMillis: 60000,
+    createTimeoutMillis: 30000,
+    destroyTimeoutMillis: 5000,
   },
-  connectionTimeout: 30000, // 30 segundos
-  requestTimeout: 30000, // 30 segundos
+  connectionTimeout: 60000, // 60 segundos
+  requestTimeout: 60000, // 60 segundos
 };
 
 module.exports = require("knex")(configInit);
